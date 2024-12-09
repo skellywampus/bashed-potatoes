@@ -45,13 +45,13 @@
 
 2. **Obtain the Script:**  
    Clone this repository:
-   ```bash```
-   ```git clone https://github.com/skellywampus/bashed-potatoes.git```
-   ```cd bashed-potatoes```
+   ``bash``
+   ``git clone https://github.com/skellywampus/bashed-potatoes.git``
+   ``cd bashed-potatoes``
 
 3. **Run the Setup Script as Root:**
 
-    ```sudo ./setup_script.sh```
+    ``sudo ./setup_script.sh``
 
     You will be prompted to:
         Set the root password
@@ -63,25 +63,25 @@
 
 ##Usage
 
-    ##Navigation:##
+   ##Navigation:##
     Use the arrow keys and Enter to choose options. Pressing ESC or selecting "back" returns you to the previous menu.
 
-    ##Running Programs:##
+   ##Running Programs:##
     When you select an option (e.g., file), it launches the program. Exiting programs returns you to the menu.
 
-    ##Managing Drives:##
+   ##Managing Drives:##
     Under system -> drives, you can view a list of partitions and manually type in the partition and mount point to mount, or choose a mounted partition to unmount.
 
-    ##APT Management:##
+   ##APT Management:##
     Under apt, you can update, install, and remove packages from a menu interface.
 
-    ##Customization:##
+   ##Customization:##
     Under customize, add your own menu entries or remove existing custom entries.
 
-    ##Timeshift Snapshots:##
+   ##Timeshift Snapshots:##
     Under system -> timeshift, create or restore system snapshots easily.
 
-    ##Exit to Terminal:##
+   ##Exit to Terminal:##
     Selecting exit from the main menu returns you to a standard root shell.
 
 ##Removing the Menu System
