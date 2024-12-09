@@ -1,3 +1,5 @@
+![Main Menu Screenshot](https://github.com/skellywampus/bashed-potatoes/blob/main/bashedPotatoesScreenshot.png "Main Menu")
+
 # Bashed Potatoes
 
 **Bashed Potatoes** is a minimal, menu-driven environment for Debian-based systems. It provides a user-friendly, text-based interface for managing common system tasks without relying heavily on manual command-line work. After setup, the system automatically logs in as root and presents a menu from which you can manage packages, browse the web, open a file manager, monitor the system, manage drives, customize menu entries, create and restore Timeshift snapshots, and more.
