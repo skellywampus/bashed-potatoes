@@ -61,7 +61,7 @@
     ##Reboot:##
     After the script finishes, on reboot, the system will automatically log you in as root and present the Bashed Potatoes menu.
 
-##Usage
+## Usage
 
    ##Navigation:##
     Use the arrow keys and Enter to choose options. Pressing ESC or selecting "back" returns you to the previous menu.
@@ -84,12 +84,12 @@
    ##Exit to Terminal:##
     Selecting exit from the main menu returns you to a standard root shell.
 
-##Removing the Menu System
+## Removing the Menu System
 
 If you later decide you don't want this environment, select the "remove_menu" option (if present) or remove files manually (such as /usr/local/bin/menu, /etc/profile.d/aliases.sh, and the lines added to /etc/profile). Also restore your /etc/systemd/system/getty@tty1.service.d/override.conf to remove autologin.
 License
 
-##License
+## License
 
 This project uses various open-source tools (Debian packages, GNU utilities), each under their respective licenses (GPL, MIT, etc.). Consult Debian’s repositories and Timeshift’s documentation for license details. The custom setup script and menu definitions can be considered under the MIT License, unless otherwise specified.
 
