@@ -441,7 +441,7 @@ scale_text() {
       ;;
     "xlarge")
 	  FONT="/usr/share/consolefonts/Lat15-TerminusBold32x16.psf.gz"
-      setfont "$FONT" && dialog --msgbox "Font changed to Large." 10 60
+      setfont "$FONT" && dialog --msgbox "Font changed to Extra Large." 10 60
       echo "FONT=${FONT}" > /etc/default/console-setup
       dpkg-reconfigure -f noninteractive console-setup
       ;;
