@@ -61,12 +61,13 @@ echo "Updating and upgrading the system..."
 apt update && apt upgrade -y
 
 # Install necessary packages
-PACKAGES="network-manager links2 mc feh btop util-linux fzf tldr mpv ncdu adduser timeshift"
+# Added dosfstools, exfatprogs, ntfs-3g for formatting; fbset and console-setup for display resolution and setfont scaling
+PACKAGES="network-manager links2 mc fim imagemagick btop util-linux fzf tldr mpv ncdu adduser timeshift dosfstools exfatprogs ntfs-3g fbset console-setup"
 echo "Installing required dependencies..."
 apt install -y $PACKAGES || { echo "Failed to install required packages: $PACKAGES"; exit 1; }
 
 # Check commands are installed
-for cmd in dialog fzf feh mpv btop nano mc nmtui links2 tldr ncdu adduser timeshift; do
+for cmd in dialog fzf fim mpv btop nano mc nmtui links2 tldr ncdu adduser timeshift fbset setfont; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
     echo "Command '$cmd' not found after installation."
     exit 1
@@ -205,13 +206,14 @@ customize_menu() {
 
 system_menu() {
   while true; do
-    SYS_CHOICE=$(dialog --clear --backtitle "System Tasks" --title "System Menu" --menu "Select an action:" 20 60 7 \
+    SYS_CHOICE=$(dialog --clear --backtitle "System Tasks" --title "System Menu" --menu "Select an action:" 20 60 8 \
       "monitor" "System Monitor (btop)" \
       "network" "Manage Wi-Fi (nmtui)" \
       "reboot" "Reboot the system" \
       "shutdown" "Shutdown the system" \
       "timeshift" "Create/Restore System Snapshots" \
-      "drives" "Mount/Unmount Drives" \
+      "drives" "Mount/Unmount/Format Drives" \
+      "display" "Display Settings (Resolution/Scaling)" \
       "back" "Return to Main Menu" 3>&1 1>&2 2>&3)
 
     case "$SYS_CHOICE" in
@@ -233,6 +235,9 @@ system_menu() {
       "drives")
         drives_menu
         ;;
+      "display")
+        display_menu
+        ;;
       "back"|"")
         break
         ;;
@@ -242,9 +247,10 @@ system_menu() {
 
 drives_menu() {
   while true; do
-    DRIVE_CHOICE=$(dialog --clear --backtitle "Drives" --title "Drives Menu" --menu "Select an action:" 15 60 3 \
+    DRIVE_CHOICE=$(dialog --clear --backtitle "Drives" --title "Drives Menu" --menu "Select an action:" 15 60 4 \
       "mount" "Mount a Partition" \
       "unmount" "Unmount a Mounted Partition" \
+      "format" "Format a Drive" \
       "back" "Back" 3>&1 1>&2 2>&3)
 
     case "$DRIVE_CHOICE" in
@@ -253,6 +259,9 @@ drives_menu() {
         ;;
       "unmount")
         unmount_drive
+        ;;
+      "format")
+        format_drive
         ;;
       "back"|"")
         break
@@ -263,7 +272,7 @@ drives_menu() {
 
 mount_drive() {
   PARTITION_LIST=$(lsblk -pn -o NAME,SIZE,TYPE,MOUNTPOINT)
-  DEVICE=$(dialog --stdout --inputbox "Available partitions:\n\n$PARTITION_LIST\n\nEnter the partition to mount (e.g., /dev/sdb1):" 20 80)
+  DEVICE=$(dialog --stdout --inputbox "Available partitions:\n\n$PARTITION_LIST\n\nEnter the partition to mount (e.g., /dev/sdb1):" 40 80)
 
   if [ -n "$DEVICE" ]; then
     MOUNTPOINT=$(dialog --stdout --inputbox "Enter mount point (e.g., /mnt):" 10 60)
@@ -282,7 +291,6 @@ mount_drive() {
   fi
 }
 
-
 unmount_drive() {
   MOUNTED_DRIVE=$(lsblk -p -o NAME,MOUNTPOINT | grep '/' | grep -v 'boot' | fzf --prompt="Select a mounted partition to unmount: ")
   if [ -n "$MOUNTED_DRIVE" ]; then
@@ -296,6 +304,38 @@ unmount_drive() {
     fi
   else
     dialog --msgbox "No mounted partition selected." 10 60
+  fi
+}
+
+format_drive() {
+  # List available block devices (not partitions specifically, as formatting usually is at device or partition level)
+  # Using lsblk to list non-mounted devices as candidates
+  DEVICES=$(lsblk -pno NAME,SIZE,TYPE | grep 'disk\|part')
+  SELECTED_DEVICE=$(echo "$DEVICES" | fzf --prompt="Select a device/partition to format: ")
+  if [ -n "$SELECTED_DEVICE" ]; then
+    DEVICE=$(echo "$SELECTED_DEVICE" | awk '{print $1}')
+    FS_TYPE=$(dialog --clear --backtitle "Format Drive" --title "Select Filesystem" --menu "Select the filesystem to format with:" 15 60 3 \
+      "fat32" "Format as FAT32" \
+      "ntfs" "Format as NTFS" \
+      "exfat" "Format as exFAT" 3>&1 1>&2 2>&3)
+
+    if [ -n "$FS_TYPE" ]; then
+      case "$FS_TYPE" in
+        "fat32")
+          mkfs.vfat -F 32 "$DEVICE" && dialog --msgbox "Device $DEVICE formatted as FAT32." 10 60 || dialog --msgbox "Formatting failed." 10 60
+          ;;
+        "ntfs")
+          mkfs.ntfs -F "$DEVICE" && dialog --msgbox "Device $DEVICE formatted as NTFS." 10 60 || dialog --msgbox "Formatting failed." 10 60
+          ;;
+        "exfat")
+          mkfs.exfat "$DEVICE" && dialog --msgbox "Device $DEVICE formatted as exFAT." 10 60 || dialog --msgbox "Formatting failed." 10 60
+          ;;
+      esac
+    else
+      dialog --msgbox "No filesystem type selected." 10 60
+    fi
+  else
+    dialog --msgbox "No device selected." 10 60
   fi
 }
 
@@ -320,6 +360,95 @@ timeshift_menu() {
         ;;
     esac
   done
+}
+
+display_menu() {
+  while true; do
+    DISP_CHOICE=$(dialog --clear --backtitle "Display Settings" --title "Display Menu" --menu "Select an action:" 15 60 3 \
+      "change_resolution" "Change Resolution. Not persistent." \
+      "scale_text" "Scale Console Text (setfont)" \
+      "back" "Back" 3>&1 1>&2 2>&3)
+
+    case "$DISP_CHOICE" in
+      "change_resolution")
+        change_resolution
+        ;;
+      "scale_text")
+        scale_text
+        ;;
+      "back"|"")
+        break
+        ;;
+    esac
+  done
+}
+
+change_resolution() {
+  RES=$(dialog --stdout --inputbox "Enter desired resolution (e.g., 1920x1080):" 10 60)
+  if [ -n "$RES" ]; then
+    XRES=$(echo "$RES" | cut -d'x' -f1)
+    YRES=$(echo "$RES" | cut -d'x' -f2)
+    if [ -n "$XRES" ] && [ -n "$YRES" ]; then
+      if fbset -xres "$XRES" -yres "$YRES"; then
+        dialog --msgbox "Resolution changed to ${XRES}x${YRES}." 10 60
+      else
+        dialog --msgbox "Failed to set resolution." 10 60
+      fi
+    else
+      dialog --msgbox "Invalid resolution format." 10 60
+    fi
+  else
+    dialog --msgbox "No resolution entered." 10 60
+  fi
+}
+
+scale_text() {
+
+  # Terminus fonts (Debian/Ubuntu):
+  # - Lat15-Terminus12x6.psf.gz   (Small)
+  # - Lat15-Terminus14.psf.gz     (Medium)
+  # - Lat15-TerminusBold24x12.psf.gz     (Large)
+  # - Lat15-TerminusBold32x16.psf.gz (Extra Large)
+  
+  FONT_MENU=(
+    "small" "Small Font (12x6)"
+    "medium" "Medium Font (14)"
+    "large" "Large Font (Bold 24x12)"
+    "xlarge" "Extra Large Font (Bold 32x16)"
+  )
+  
+  FONT_CHOICE=$(dialog --clear --backtitle "Scale Text" --title "Select Text Size" --menu "Choose a font size:" 15 60 4 \
+    "${FONT_MENU[@]}" 3>&1 1>&2 2>&3)
+  
+  case "$FONT_CHOICE" in
+    "small")
+	  FONT="/usr/share/consolefonts/Lat15-Terminus12x6.psf.gz"
+      setfont "$FONT" && dialog --msgbox "Font changed to Large." 10 60
+      echo "FONT=${FONT}" > /etc/default/console-setup
+      dpkg-reconfigure -f noninteractive console-setup
+      ;;
+    "medium")
+	  FONT="/usr/share/consolefonts/Lat15-Terminus14.psf.gz"
+      setfont "$FONT" && dialog --msgbox "Font changed to Large." 10 60
+      echo "FONT=${FONT}" > /etc/default/console-setup
+      dpkg-reconfigure -f noninteractive console-setup
+      ;;
+    "large")
+      FONT="/usr/share/consolefonts/Lat15-TerminusBold24x12.psf.gz"
+      setfont "$FONT" && dialog --msgbox "Font changed to Large." 10 60
+      echo "FONT=${FONT}" > /etc/default/console-setup
+      dpkg-reconfigure -f noninteractive console-setup
+      ;;
+    "xlarge")
+	  FONT="/usr/share/consolefonts/Lat15-TerminusBold32x16.psf.gz"
+      setfont "$FONT" && dialog --msgbox "Font changed to Large." 10 60
+      echo "FONT=${FONT}" > /etc/default/console-setup
+      dpkg-reconfigure -f noninteractive console-setup
+      ;;
+    *)
+      dialog --msgbox "No font size selected." 10 60
+      ;;
+  esac
 }
 
 main_menu
@@ -352,3 +481,7 @@ echo "Setup is complete!
 - The menu will appear automatically when you log in as root.
 - Type 'menu' to open the menu at any time.
 "
+setfont /usr/share/consolefonts/Lat15-TerminusBold24x12.psf.gz
+echo "FONT=Lat15-TerminusBold24x12.psf.gz" > /etc/default/console-setup
+dpkg-reconfigure -f noninteractive console-setup
+menu
