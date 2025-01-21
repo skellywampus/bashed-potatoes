@@ -111,7 +111,7 @@ main_menu() {
     case "$CHOICE" in
       "command")
         CMD=$(dialog --stdout --inputbox "Enter command to run:" 10 60)
-        [ -n "$CMD" ] && eval "$CMD" || dialog --msgbox "No command entered." 10 60
+        [ -n "$CMD" ] && eval "clear ; $CMD ; echo ; echo -n "Press any key to continue" ; read -n1" || dialog --msgbox "No command entered." 10 60
         ;;
       "file")
         mc
@@ -271,7 +271,7 @@ drives_menu() {
 }
 
 mount_drive() {
-  PARTITION_LIST=$(lsblk -pn -o NAME,SIZE,TYPE,MOUNTPOINT)
+  PARTITION_LIST=$(lsblk -pn -o NAME,RM,SIZE,MOUNTPOINT | awk '$2 == "1"')
   DEVICE=$(dialog --stdout --inputbox "Available partitions:\n\n$PARTITION_LIST\n\nEnter the partition to mount (e.g., /dev/sdb1):" 40 80)
 
   if [ -n "$DEVICE" ]; then
@@ -292,19 +292,13 @@ mount_drive() {
 }
 
 unmount_drive() {
-  MOUNTED_DRIVE=$(lsblk -p -o NAME,MOUNTPOINT | grep '/' | grep -v 'boot' | fzf --prompt="Select a mounted partition to unmount: ")
-  if [ -n "$MOUNTED_DRIVE" ]; then
-    MOUNTPOINT=$(echo "$MOUNTED_DRIVE" | awk '{print $2}')
-    if [ -n "$MOUNTPOINT" ]; then
-      if umount "$MOUNTPOINT"; then
-        dialog --msgbox "Partition at $MOUNTPOINT unmounted successfully." 10 60
-      else
-        dialog --msgbox "Failed to unmount $MOUNTPOINT." 10 60
-      fi
+  PARTITION_LIST=$(lsblk -pn -o NAME,RM,SIZE,MOUNTPOINT | awk '$2 == "1"')
+  MOUNTED_DRIVE=$(dialog --stdout --inputbox "Available partitions:\n\n$PARTITION_LIST\nEnter mount point (e.g., /mnt/usb):" 10 60)
+    if umount -f "$MOUNTED_DRIVE"; then
+      dialog --msgbox "Partition unmounted successfully." 10 60
+    else
+      dialog --msgbox "Failed to unmount." 10 60
     fi
-  else
-    dialog --msgbox "No mounted partition selected." 10 60
-  fi
 }
 
 format_drive() {
