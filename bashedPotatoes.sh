@@ -111,7 +111,15 @@ main_menu() {
     case "$CHOICE" in
       "command")
         CMD=$(dialog --stdout --inputbox "Enter command to run:" 10 60)
-        [ -n "$CMD" ] && eval "clear ; $CMD ; echo ; echo -n "Press any key to continue" ; read -n1" || dialog --msgbox "No command entered." 10 60
+	if [ -n "$CMD" ]; then
+ 	  clear
+  	  $CMD 2>&1
+  	  echo
+   	  echo "Press any key to continue..."
+    	  read -n1
+     	else
+      	  dialog --msgbox "No/Invalid command entered." 10 60
+	fi
         ;;
       "file")
         mc
