@@ -417,13 +417,13 @@ scale_text() {
   case "$FONT_CHOICE" in
     "small")
 	  FONT="/usr/share/consolefonts/Lat15-Terminus12x6.psf.gz"
-      setfont "$FONT" && dialog --msgbox "Font changed to Large." 10 60
+      setfont "$FONT" && dialog --msgbox "Font changed to Small." 10 60
       echo "FONT=${FONT}" > /etc/default/console-setup
       dpkg-reconfigure -f noninteractive console-setup
       ;;
     "medium")
 	  FONT="/usr/share/consolefonts/Lat15-Terminus14.psf.gz"
-      setfont "$FONT" && dialog --msgbox "Font changed to Large." 10 60
+      setfont "$FONT" && dialog --msgbox "Font changed to Medium." 10 60
       echo "FONT=${FONT}" > /etc/default/console-setup
       dpkg-reconfigure -f noninteractive console-setup
       ;;
