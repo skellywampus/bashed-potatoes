@@ -279,11 +279,10 @@ drives_menu() {
 }
 
 mount_drive() {
-  PARTITION_LIST=$(lsblk -pn -o NAME,RM,SIZE,MOUNTPOINT | awk '$2 == "1"')
-  DEVICE=$(dialog --stdout --inputbox "Available partitions:\n\n$PARTITION_LIST\n\nEnter the partition to mount (e.g., /dev/sdb1):" 40 80)
+  DEVICE=$(dialog --clear --stdout --title "Select partition to mount" --menu "Available Partitions" 15 60 10 $(lsblk -pn -o NAME,SIZE,TYPE,RM | awk '$4 == "1" {print $1 " " $2}'))
 
   if [ -n "$DEVICE" ]; then
-    MOUNTPOINT=$(dialog --stdout --inputbox "Enter mount point (e.g., /mnt):" 10 60)
+    MOUNTPOINT="/mnt/$(basename $DEVICE)"
     if [ -n "$MOUNTPOINT" ]; then
       mkdir -p "$MOUNTPOINT"
       if mount -t auto "$DEVICE" "$MOUNTPOINT"; then
@@ -300,20 +299,16 @@ mount_drive() {
 }
 
 unmount_drive() {
-  PARTITION_LIST=$(lsblk -pn -o NAME,RM,SIZE,MOUNTPOINT | awk '$2 == "1"')
-  MOUNTED_DRIVE=$(dialog --stdout --inputbox "Available partitions:\n\n$PARTITION_LIST\nEnter mount point (e.g., /mnt/usb):" 10 60)
-    if umount -f "$MOUNTED_DRIVE"; then
-      dialog --msgbox "Partition unmounted successfully." 10 60
-    else
-      dialog --msgbox "Failed to unmount." 10 60
-    fi
+  MOUNTED_DRIVE=$(dialog --clear --stdout --title "Select Partition" --menu "Available Partitions" 15 60 10 $(lsblk -pn -o NAME,SIZE,TYPE,RM,MOUNTPOINT |awk '$4 == "1" && $5 != "" {print $1 " " $2}'))
+     if umount "$MOUNTED_DRIVE"; then
+       dialog --msgbox "Partition unmounted successfully." 10 60
+     else
+       dialog --msgbox "Failed to unmount." 10 60
+     fi
 }
 
 format_drive() {
-  # List available block devices (not partitions specifically, as formatting usually is at device or partition level)
-  # Using lsblk to list non-mounted devices as candidates
-  DEVICES=$(lsblk -pno NAME,SIZE,TYPE | grep 'disk\|part')
-  SELECTED_DEVICE=$(echo "$DEVICES" | fzf --prompt="Select a device/partition to format: ")
+  SELECTED_DEVICE=$(dialog --clear --stdout --title "Select Device" --menu "Available devices" 15 60 10 $(lsblk -pn -o NAME,SIZE,TYPE,RM | awk '$4 == "1" {print $1 " " $2}'))
   if [ -n "$SELECTED_DEVICE" ]; then
     DEVICE=$(echo "$SELECTED_DEVICE" | awk '{print $1}')
     FS_TYPE=$(dialog --clear --backtitle "Format Drive" --title "Select Filesystem" --menu "Select the filesystem to format with:" 15 60 3 \
@@ -324,13 +319,13 @@ format_drive() {
     if [ -n "$FS_TYPE" ]; then
       case "$FS_TYPE" in
         "fat32")
-          mkfs.vfat -F 32 "$DEVICE" && dialog --msgbox "Device $DEVICE formatted as FAT32." 10 60 || dialog --msgbox "Formatting failed." 10 60
+          umount "$DEVICE" ; mkfs.vfat -F 32 "$DEVICE" && dialog --msgbox "Device $DEVICE formatted as FAT32." 10 60 || dialog --msgbox "Formatting failed." 10 60
           ;;
         "ntfs")
-          mkfs.ntfs -F "$DEVICE" && dialog --msgbox "Device $DEVICE formatted as NTFS." 10 60 || dialog --msgbox "Formatting failed." 10 60
+          umount "$DEVICE" ; mkfs.ntfs -F "$DEVICE" && dialog --msgbox "Device $DEVICE formatted as NTFS." 10 60 || dialog --msgbox "Formatting failed." 10 60
           ;;
         "exfat")
-          mkfs.exfat "$DEVICE" && dialog --msgbox "Device $DEVICE formatted as exFAT." 10 60 || dialog --msgbox "Formatting failed." 10 60
+          umount "$DEVICE" ; mkfs.exfat "$DEVICE" && dialog --msgbox "Device $DEVICE formatted as exFAT." 10 60 || dialog --msgbox "Formatting failed." 10 60
           ;;
       esac
     else
