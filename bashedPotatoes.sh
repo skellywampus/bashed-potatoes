@@ -42,7 +42,7 @@ Navigation:
 
 Main Menu Options:
 - command: Run shell commands directly
-- file: Open File Manager (mc)
+- file: Open File Manager (ranger)
 - browse: Browse the Web (links2)
 - apt: Manage packages without typing commands
 - customize: Add or remove custom menu items
@@ -50,7 +50,7 @@ Main Menu Options:
 
 Use CTRL+C to close programs and return to the main menu.
 
-Open/edit files and launch videos/images through mc directly.
+Open/edit files and launch videos/images through ranger directly.
 
 For command examples and quick help, use the 'Command Help (tldr)' option.
 HELP
@@ -61,13 +61,13 @@ echo "Updating and upgrading the system..."
 apt update && apt upgrade -y
 
 # Install necessary packages
-# Added dosfstools, exfatprogs, ntfs-3g for formatting; fbset and console-setup for display resolution and setfont scaling
-PACKAGES="network-manager links2 mc fim imagemagick btop util-linux fzf tldr mpv ncdu adduser timeshift dosfstools exfatprogs ntfs-3g fbset console-setup"
+# Added ranger in place of mc, removed fzf
+PACKAGES="network-manager links2 ranger fim imagemagick btop util-linux tldr mpv ncdu adduser timeshift dosfstools exfatprogs ntfs-3g fbset console-setup"
 echo "Installing required dependencies..."
 apt install -y $PACKAGES || { echo "Failed to install required packages: $PACKAGES"; exit 1; }
 
 # Check commands are installed
-for cmd in dialog fzf fim mpv btop nano mc nmtui links2 tldr ncdu adduser timeshift fbset setfont; do
+for cmd in dialog ranger fim mpv btop nano nmtui links2 tldr ncdu adduser timeshift fbset setfont; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
     echo "Command '$cmd' not found after installation."
     exit 1
@@ -91,7 +91,7 @@ main_menu() {
   while true; do
     MENU_ENTRIES=(
       command "Run shell commands directly"
-      file "Open File Manager (mc)"
+      file "Open File Manager (ranger)"
       browse "Browse the Web (links2)"
       apt "Manage Packages (APT)"
       customize "Customize Menu Entries"
@@ -122,7 +122,7 @@ main_menu() {
 	fi
         ;;
       "file")
-        mc
+        ranger
         ;;
       "browse")
         URL=$(dialog --stdout --inputbox "Enter the URL to browse:" 10 60 "http://")
@@ -456,7 +456,7 @@ chmod +x /usr/local/bin/menu
 echo "Creating command aliases..."
 cat << 'EOF' > /etc/profile.d/aliases.sh
 alias menu="menu"
-alias file="mc"
+alias file="ranger"
 alias browse="links2 -g"
 EOF
 
